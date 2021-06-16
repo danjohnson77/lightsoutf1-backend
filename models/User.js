@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -24,6 +25,14 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false,
   },
+
+  verifyToken: String,
+  verifyTokenExpire: Date,
+  verified: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
 });
 
 // Encrypt password using bcrypt
@@ -48,20 +57,30 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Generate and hash password reset token
-UserSchema.methods.getResetPasswordToken = function () {
+// Generate and hash token
+UserSchema.methods.getVerifyToken = function () {
   // Generate token
-  const resetToken = crypto.randomBytes(20).toString("hex");
+  const token = crypto.randomBytes(20).toString("hex");
 
-  // Hash token and set to resetPasswordToken field
-  this.resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
+  // Hash token and set to dynamic field
+  this.verifyToken = crypto.createHash("sha256").update(token).digest("hex");
 
   // Set expire
-  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
-  return resetToken;
+
+  this.verifyTokenExpire = Date.now() + 10 * 60 * 1000;
+  return this.verifyToken;
+};
+
+UserSchema.methods.checkToken = function (token) {
+  if (token === this.verifyToken) {
+    this.verified = true;
+    this.verifyToken = null;
+    this.verifyTokenExpire = null;
+    this.save();
+    return true;
+  } else {
+    return false;
+  }
 };
 
 module.exports = mongoose.model("user", UserSchema);

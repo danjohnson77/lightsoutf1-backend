@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
 const colors = require("colors");
+const cors = require("cors");
 const connectDB = require("./config/db");
 
 dotenv.config({ path: "./config/config.env" });
@@ -15,6 +16,14 @@ const auth = require("./routes/auth");
 const app = express();
 
 app.use(express.json());
+
+const corsOptions = {
+  origin: "http://localhost:3000",
+  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+// Enable CORS
+app.use(cors(corsOptions));
 
 process.env.NODE_ENV === "development" && app.use(morgan("dev"));
 

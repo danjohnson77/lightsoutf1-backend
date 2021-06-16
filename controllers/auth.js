@@ -1,5 +1,6 @@
 const asyncHandler = require("../middleware/async");
 const errorHandler = require("../middleware/error");
+const sgMail = require("@sendgrid/mail");
 const User = require("../models/User");
 
 // @desc Register User
@@ -10,12 +11,22 @@ exports.register = asyncHandler(async (req, res, next) => {
 
   try {
     //   Create user
-    await User.create({
+    const user = await User.create({
       name,
       email,
       password,
     });
-    res.status(200).json({ success: true });
+    const verifyToken = user.getVerifyToken();
+    await user.save();
+    res.status(200).json({
+      success: true,
+      user: {
+        name: user.name,
+        email: user.email,
+        verifyToken,
+        id: user._id,
+      },
+    });
   } catch (error) {
     return next(errorHandler(error, req, res, next));
   }
@@ -72,4 +83,49 @@ exports.login = asyncHandler(async (req, res, next) => {
   } catch (error) {
     return next(errorHandler(error, req, res, next));
   }
+});
+
+// @desc Send Email
+// @route POST /auth/email
+// @access Public
+exports.sendEmail = asyncHandler(async (req, res, next) => {
+  const { email, verifyToken, id } = req.body;
+
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+  const html = `<a href='http://localhost:3000/verify?token=${verifyToken}&id=${id}'>Click here</a> to verify your email`;
+
+  const msg = {
+    to: email,
+    from: "noreply@lightsoutf1.racing",
+    subject: "Verify your email",
+    html,
+  };
+
+  try {
+    await sgMail.send(msg);
+    res.status(200).send({ success: true });
+  } catch (error) {
+    return next(
+      errorHandler(
+        { error: { message: error.response.body.errors.message, status: 500 } },
+        req,
+        res,
+        next
+      )
+    );
+  }
+});
+
+// @desc Verify Email
+// @route POST /auth/verify
+// @access Public
+exports.verifyEmail = asyncHandler(async (req, res, next) => {
+  const { token, id } = req.body;
+
+  const user = await User.findById(id);
+
+  const verified = user && user.checkToken(token);
+
+  res.status(200).send({ success: verified });
 });
