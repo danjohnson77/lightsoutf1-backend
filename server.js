@@ -12,6 +12,7 @@ connectDB();
 
 // Routes
 const auth = require("./routes/auth");
+const predict = require("./routes/predict");
 
 const app = express();
 
@@ -29,6 +30,7 @@ process.env.NODE_ENV === "development" && app.use(morgan("dev"));
 
 // Mount Routes
 app.use("/auth", auth);
+app.use("/predict", predict);
 
 const PORT = process.env.PORT || 5000;
 

@@ -33,6 +33,18 @@ const UserSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
+
+  points: Number,
+  currentPrediction: {
+    type: Array,
+    required: true,
+    default: [],
+  },
+  pastPredictions: {
+    type: Array,
+    required: true,
+    default: [],
+  },
 });
 
 // Encrypt password using bcrypt
