@@ -7,7 +7,39 @@ const axios = require("axios");
 const dayjs = require("dayjs");
 const UTC = require("dayjs/plugin/UTC");
 
+const User = require("../models/User");
+
 dayjs.extend(UTC); // use plugin
+
+// @desc Get Race Info
+// @route GET /predict/
+// @access Private
+exports.getRaceInfo = asyncHandler(async (req, res, next) => {
+  fs.readFile("./config/raceInfo.json", "utf8", (err, data) => {
+    if (err) {
+      return next(errorHandler(err, req, res, next));
+    }
+    res.json(JSON.parse(data));
+  });
+});
+
+// @desc Update Race Info
+// @route POST /predict/
+// @access Private
+exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
+  try {
+    const { list, user, raceId } = req.body;
+    const currentUser = await User.findById(user.id);
+    currentUser.currentPrediction = {
+      list,
+      raceId,
+    };
+    currentUser.save();
+    res.json({ success: true, list });
+  } catch (error) {
+    return next(errorHandler(error, req, res, next));
+  }
+});
 
 // @desc Update Race Info
 // @route POST /predict/update
