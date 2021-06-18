@@ -11,6 +11,19 @@ const User = require("../models/User");
 
 dayjs.extend(UTC); // use plugin
 
+// @desc Get Users Predicitons
+// @route POST /predict/user
+// @access Private
+exports.getPredictions = asyncHandler(async (req, res, next) => {
+  const { id } = req.body;
+  try {
+    const user = await User.findById(id);
+    res.json(user.currentPrediction);
+  } catch (error) {
+    return next(errorHandler(error, req, res, next));
+  }
+});
+
 // @desc Get Race Info
 // @route GET /predict/
 // @access Private
@@ -19,20 +32,22 @@ exports.getRaceInfo = asyncHandler(async (req, res, next) => {
     if (err) {
       return next(errorHandler(err, req, res, next));
     }
-    res.json(JSON.parse(data));
+    res.status(200).json(JSON.parse(data));
   });
 });
 
-// @desc Update Race Info
+// @desc Update User Prediction
 // @route POST /predict/
 // @access Private
 exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
   try {
-    const { list, user, raceId } = req.body;
+    const { list, user, raceId, tiebreaker } = req.body;
     const currentUser = await User.findById(user.id);
     currentUser.currentPrediction = {
       list,
       raceId,
+      tiebreaker,
+      lastUpdated: Date.now(),
     };
     currentUser.save();
     res.json({ success: true, list });
@@ -42,9 +57,10 @@ exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
 });
 
 // @desc Update Race Info
-// @route POST /predict/update
+// @route GET /predict/update
 // @access Private
 exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
+  const dateFormat = "DD MMMM, YYYY HH:mm";
   try {
     const lastRaceRes = axios.get(
       `${process.env.F1_API_URL}/current/last/results.json`
@@ -76,16 +92,18 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
           });
 
       let key = "";
-      let returnObj = {};
+      let returnObj = {
+        id: `${season}r${round}`,
+        raceName,
+        date: Date.parse(dayjs(`${date}T${time}`)),
+        displayDate: dayjs(`${date}T${time}`).utc().format(dateFormat) + " GMT",
+        lastUpdated: dayjs().format(dateFormat),
+      };
 
       if (index === 0) {
         key = "lastRace";
-
         returnObj = {
-          id: `${season}r${round}`,
-          raceName,
-          date: dayjs.utc(`${date}T${time}`).unix(),
-          lastUpdated: dayjs(),
+          ...returnObj,
           results: results.map((item) => {
             const {
               Driver: { driverId },
@@ -97,12 +115,6 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
       }
       if (index === 1) {
         key = "nextRace";
-        returnObj = {
-          id: `${season}r${round}`,
-          raceName,
-          date: dayjs.utc(`${date}T${time}`).unix(),
-          lastUpdated: dayjs(),
-        };
       }
 
       return { [key]: returnObj };

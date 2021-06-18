@@ -78,7 +78,11 @@ exports.login = asyncHandler(async (req, res, next) => {
 
     res.status(200).send({
       success: true,
-      user: { name: user.name, email: user.email, id: user._id },
+      user: {
+        name: user.name,
+        email: user.email,
+        id: user._id,
+      },
     });
   } catch (error) {
     return next(errorHandler(error, req, res, next));
