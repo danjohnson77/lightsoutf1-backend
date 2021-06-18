@@ -11,6 +11,8 @@ const User = require("../models/User");
 
 dayjs.extend(UTC); // use plugin
 
+const dateFormat = "DD MMMM, YYYY HH:mm";
+
 // @desc Get Users Predicitons
 // @route POST /predict/user
 // @access Private
@@ -18,6 +20,7 @@ exports.getPredictions = asyncHandler(async (req, res, next) => {
   const { id } = req.body;
   try {
     const user = await User.findById(id);
+
     res.json(user.currentPrediction);
   } catch (error) {
     return next(errorHandler(error, req, res, next));
@@ -47,7 +50,7 @@ exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
       list,
       raceId,
       tiebreaker,
-      lastUpdated: Date.now(),
+      lastUpdated: dayjs().format(dateFormat),
     };
     currentUser.save();
     res.json({ success: true, list });
@@ -60,7 +63,6 @@ exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
 // @route GET /predict/update
 // @access Private
 exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
-  const dateFormat = "DD MMMM, YYYY HH:mm";
   try {
     const lastRaceRes = axios.get(
       `${process.env.F1_API_URL}/current/last/results.json`
