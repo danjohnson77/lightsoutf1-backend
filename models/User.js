@@ -34,7 +34,7 @@ const UserSchema = new mongoose.Schema({
     default: false,
   },
 
-  points: Number,
+  points: { type: Number, required: true, default: 0 },
   currentPrediction: {
     type: Object,
     required: true,

@@ -1,6 +1,6 @@
 const asyncHandler = require("../middleware/async");
 const errorHandler = require("../middleware/error");
-
+const { getCurrentRaceInfo } = require("../utils/resolvePredictions");
 const fs = require("fs");
 
 const axios = require("axios");
@@ -31,12 +31,12 @@ exports.getPredictions = asyncHandler(async (req, res, next) => {
 // @route GET /predict/
 // @access Private
 exports.getRaceInfo = asyncHandler(async (req, res, next) => {
-  fs.readFile("./config/raceInfo.json", "utf8", (err, data) => {
-    if (err) {
-      return next(errorHandler(err, req, res, next));
-    }
-    res.status(200).json(JSON.parse(data));
-  });
+  const response = await getCurrentRaceInfo();
+
+  if (response.error) {
+    return next(errorHandler(response, req, res, next));
+  }
+  res.status(200).json(response);
 });
 
 // @desc Update User Prediction
@@ -97,7 +97,7 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
       let returnObj = {
         id: `${season}r${round}`,
         raceName,
-        date: Date.parse(dayjs(`${date}T${time}`)),
+        date: Date.parse(`${date}T${time}`),
         displayDate: dayjs(`${date}T${time}`).utc().format(dateFormat) + " GMT",
         lastUpdated: dayjs().format(dateFormat),
       };
