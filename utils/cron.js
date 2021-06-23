@@ -1,24 +1,31 @@
 const schedule = require("node-schedule");
 
-const raceInfo = require("../config/raceInfo");
-const { resolvePredictions } = require("./resolvePredictions");
+const {
+  resolvePredictions,
+  getRaceInfoFromFile,
+} = require("./resolvePredictions");
 
-const startCron = () => {
-  console.log("CRON STARTED");
-  const date = raceInfo[1].nextRace.date;
-  const now = Date.now();
+const startCron = async (time = Date.now() + 10 * 1000) => {
+  console.log("CRON STARTED", time);
 
-  const scheduleTime = new Date(now * 1000);
+  schedule.scheduleJob(time, async () => {
+    console.log("RAN JOB AT", time);
 
-  console.log(date, now, scheduleTime, now < date);
+    const resolveResults = await resolvePredictions();
+    console.log("res", resolveResults);
+    if (resolveResults === "unchanged") {
+      time = Date.now() + 60 * 60 * 1000;
+      startCron(time);
+    } else if (resolveResults === "changed") {
+      const newRaceInfo = await getRaceInfoFromFile();
 
-  //resolvePredictions();
+      time = newRaceInfo[1].nextRace.date + 60;
 
-  //   const job = schedule.scheduleJob(scheduleTime, async () => {
-  //     console.log("RAN JOB AT", scheduleTime, await resolvePredictions());
-
-  //     // startCron();
-  //   });
+      startCron(time);
+    } else if (resolveResults === "DB Error") {
+      console.log("DB ERROR");
+    }
+  });
 };
 
 module.exports = { startCron };

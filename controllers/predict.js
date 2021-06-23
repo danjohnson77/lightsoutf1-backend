@@ -1,7 +1,8 @@
 const asyncHandler = require("../middleware/async");
 const errorHandler = require("../middleware/error");
-const { getCurrentRaceInfo } = require("../utils/resolvePredictions");
-const fs = require("fs");
+
+const { getRaceInfoFromFile } = require("../utils/resolvePredictions");
+const fs = require("fs").promises;
 
 const axios = require("axios");
 const dayjs = require("dayjs");
@@ -31,8 +32,7 @@ exports.getPredictions = asyncHandler(async (req, res, next) => {
 // @route GET /predict/
 // @access Private
 exports.getRaceInfo = asyncHandler(async (req, res, next) => {
-  const response = await getCurrentRaceInfo();
-
+  const response = await getRaceInfoFromFile();
   if (response.error) {
     return next(errorHandler(response, req, res, next));
   }
@@ -44,10 +44,11 @@ exports.getRaceInfo = asyncHandler(async (req, res, next) => {
 // @access Private
 exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
   try {
-    const { list, user, raceId, tiebreaker } = req.body;
+    const { list, user, raceId, tiebreaker, raceName } = req.body;
     const currentUser = await User.findById(user.id);
     currentUser.currentPrediction = {
       list,
+      raceName,
       raceId,
       tiebreaker,
       lastUpdated: dayjs().format(dateFormat),
@@ -65,7 +66,7 @@ exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
 exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
   try {
     const lastRaceRes = axios.get(
-      `${process.env.F1_API_URL}/current/last/results.json`
+      `${process.env.F1_API_URL}/2021/6/results.json`
     );
 
     const nextRaceRes = axios.get(`${process.env.F1_API_URL}/current.json`);
@@ -90,7 +91,7 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
 
             const parsed = Date.parse(d);
 
-            return parsed > Date.now();
+            return parsed > Date.now() - 1000000000;
           });
 
       let key = "";
@@ -122,7 +123,7 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
       return { [key]: returnObj };
     });
 
-    fs.writeFileSync("./config/raceInfo.json", JSON.stringify(fullRes));
+    await fs.writeFile("./config/raceInfo.json", JSON.stringify(fullRes));
 
     res.json(fullRes);
   } catch (error) {
