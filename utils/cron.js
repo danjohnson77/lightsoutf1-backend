@@ -12,7 +12,9 @@ const startCron = async (time = Date.now() + 10 * 1000) => {
     console.log("RAN JOB AT", time);
 
     const resolveResults = await resolvePredictions();
+
     console.log("res", resolveResults);
+
     if (resolveResults === "unchanged") {
       time = Date.now() + 60 * 60 * 1000;
       startCron(time);

@@ -66,7 +66,7 @@ exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
 exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
   try {
     const lastRaceRes = axios.get(
-      `${process.env.F1_API_URL}/2021/6/results.json`
+      `${process.env.F1_API_URL}/current/last/results.json`
     );
 
     const nextRaceRes = axios.get(`${process.env.F1_API_URL}/current.json`);
@@ -95,6 +95,7 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
           });
 
       let key = "";
+
       let returnObj = {
         id: `${season}r${round}`,
         raceName,
