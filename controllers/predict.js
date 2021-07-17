@@ -6,11 +6,11 @@ const fs = require("fs").promises;
 
 const axios = require("axios");
 const dayjs = require("dayjs");
-const UTC = require("dayjs/plugin/UTC");
+// const UTC = require("dayjs/plugin/UTC");
 
 const User = require("../models/User");
 
-dayjs.extend(UTC); // use plugin
+// dayjs.extend(UTC); // use plugin
 
 const dateFormat = "DD MMMM, YYYY HH:mm";
 
@@ -100,7 +100,7 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
         id: `${season}r${round}`,
         raceName,
         date: Date.parse(`${date}T${time}`),
-        displayDate: dayjs(`${date}T${time}`).utc().format(dateFormat) + " GMT",
+        displayDate: dayjs(`${date}T${time}`).format(dateFormat) + " GMT",
         lastUpdated: dayjs().format(dateFormat),
       };
 

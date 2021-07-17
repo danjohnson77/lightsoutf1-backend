@@ -1,9 +1,11 @@
 node_modules/
 
 config/config.env
-# Elastic Beanstalk Files
-.elasticbeanstalk/*
-!.elasticbeanstalk/*.cfg.yml
-!.elasticbeanstalk/*.global.yml
+
 .gitignore
-.elasticbeanstalk/
+
+
+
+npm-debug.log
+.DS_Store
+/*.env
