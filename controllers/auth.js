@@ -97,7 +97,7 @@ exports.sendEmail = asyncHandler(async (req, res, next) => {
 
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-  const html = `<a href='http://localhost:3000/verify?token=${verifyToken}&id=${id}'>Click here</a> to verify your email`;
+  const html = `<a href='https://lightsoutf1-frontend.vercel.app/verify?token=${verifyToken}&id=${id}'>Click here</a> to verify your email`;
 
   const msg = {
     to: email,
