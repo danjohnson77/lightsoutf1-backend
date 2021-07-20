@@ -6,10 +6,10 @@ const {
 } = require("./resolvePredictions");
 
 const startCron = async (time = Date.now() + 10 * 1000) => {
-  console.log("CRON STARTED", time);
+  console.log("CRON STARTED", time.toUTCString());
 
   schedule.scheduleJob(time, async () => {
-    console.log("RAN JOB AT", time);
+    console.log("RAN JOB AT", time.toUTCString());
 
     const resolveResults = await resolvePredictions();
 
@@ -17,6 +17,7 @@ const startCron = async (time = Date.now() + 10 * 1000) => {
 
     if (resolveResults === "unchanged") {
       time = Date.now() + 60 * 60 * 1000;
+      console.log("Unchanged, running next job at ", time.toUTCString());
       startCron(time);
     } else if (resolveResults === "changed") {
       const newRaceInfo = await getRaceInfoFromFile();
