@@ -107,7 +107,7 @@ const updateRaceConfig = async () => {
         id: `${season}r${round}`,
         raceName,
         date: Date.parse(`${date}T${time}`),
-        displayDate: dayjs(`${date}T${time}`).utc().format(dateFormat) + " GMT",
+        displayDate: dayjs(`${date}T${time}`).format(dateFormat) + " GMT",
         lastUpdated: dayjs().format(dateFormat),
       };
 
