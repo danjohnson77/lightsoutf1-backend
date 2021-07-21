@@ -42,7 +42,7 @@ exports.getRaceInfoFromFile = async () => {
 };
 
 const checkForNewRaceResults = async () => {
-  const raceInfo = await this.getRaceInfoFromFile();
+  const raceInfo = await RaceInfo.find({});
 
   const { lastRace } = raceInfo[0];
 

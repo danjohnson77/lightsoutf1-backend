@@ -6,11 +6,9 @@ const fs = require("fs").promises;
 
 const axios = require("axios");
 const dayjs = require("dayjs");
-// const UTC = require("dayjs/plugin/UTC");
 
 const User = require("../models/User");
-
-// dayjs.extend(UTC); // use plugin
+const RaceInfo = require("../models/RaceInfo");
 
 const dateFormat = "DD MMMM, YYYY HH:mm";
 
@@ -32,7 +30,7 @@ exports.getPredictions = asyncHandler(async (req, res, next) => {
 // @route GET /predict/
 // @access Private
 exports.getRaceInfo = asyncHandler(async (req, res, next) => {
-  const response = await getRaceInfoFromFile();
+  const response = await RaceInfo.find({});
   if (response.error) {
     return next(errorHandler(response, req, res, next));
   }
@@ -66,10 +64,12 @@ exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
 exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
   try {
     const lastRaceRes = axios.get(
-      `${process.env.F1_API_URL}/current/last/results.json`
+      `${process.env.F1_API_URL}/2021/8/results.json`
     );
 
-    const nextRaceRes = axios.get(`${process.env.F1_API_URL}/current.json`);
+    const nextRaceRes = axios.get(
+      `${process.env.F1_API_URL}/2021/9/results.json`
+    );
 
     const apiRes = await axios.all([lastRaceRes, nextRaceRes]);
 
@@ -82,17 +82,20 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
         season,
         round,
         raceName,
-      } = index === 0
-        ? races[0]
-        : races.find((race) => {
-            const date = race.date + "T" + race.time;
+      } = races[0];
 
-            const d = new Date(date);
+      //index === 0
+      //   ? races[0]
+      //   : races.find((race) => {
+      //       const date = race.date + "T" + race.time;
 
-            const parsed = Date.parse(d);
+      //       const d = new Date(date);
 
-            return parsed > Date.now() - 1000000000;
-          });
+      //       const parsed = Date.parse(d);
+
+      //       console.log(parsed, Date.now());
+      //       return parsed > Date.now();
+      //     });
 
       let key = "";
 
@@ -124,9 +127,12 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
       return { [key]: returnObj };
     });
 
-    await fs.writeFile("./config/raceInfo.json", JSON.stringify(fullRes));
+    const objForDB = await RaceInfo.create({
+      lastRace: fullRes[0].lastRace,
+      nextRace: fullRes[1].nextRace,
+    });
 
-    res.json(fullRes);
+    res.json(objForDB);
   } catch (error) {
     return next(errorHandler(error, req, res, next));
   }
