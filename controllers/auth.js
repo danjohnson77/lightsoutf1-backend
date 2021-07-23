@@ -97,7 +97,7 @@ exports.sendEmail = asyncHandler(async (req, res, next) => {
 
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-  const html = `<a href='https://lightsoutf1-frontend.vercel.app/verify?token=${verifyToken}&id=${id}'>Click here</a> to verify your email`;
+  const html = `<a href='${process.env.BASE_URL}/verify?token=${verifyToken}&id=${id}'>Click here</a> to verify your email`;
 
   const msg = {
     to: email,
@@ -132,4 +132,19 @@ exports.verifyEmail = asyncHandler(async (req, res, next) => {
   const verified = user && user.checkToken(token);
 
   res.status(200).send({ success: verified });
+});
+
+// @desc Get Current User
+// @route POST /auth/me
+// @access Public
+exports.getUser = asyncHandler(async (req, res, next) => {
+  const { id } = req.body;
+
+  try {
+    const user = await User.findById(id, "-password");
+
+    res.status(200).json({ user });
+  } catch (error) {
+    return next(errorHandler(error, req, res, next));
+  }
 });
