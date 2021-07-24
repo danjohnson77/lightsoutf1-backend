@@ -51,4 +51,4 @@ process.on("unhandledRejection", (err, promise) => {
   });
 });
 
-//startCron();
+startCron();

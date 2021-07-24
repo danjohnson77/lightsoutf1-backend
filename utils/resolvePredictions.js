@@ -4,8 +4,8 @@ const errorHandler = require("../middleware/error");
 const mongoose = require("mongoose");
 const axios = require("axios");
 const User = require("../models/User");
+const RaceInfo = require("../models/RaceInfo");
 const dayjs = require("dayjs");
-const fs = require("fs").promises;
 
 exports.resolvePredictions = asyncHandler(async () => {
   const newResults = await checkForNewRaceResults();
@@ -34,11 +34,11 @@ exports.resolvePredictions = asyncHandler(async () => {
 });
 
 exports.getRaceInfoFromFile = async () => {
-  const file = await fs.readFile("./config/raceInfo.json");
+  const file = await RaceInfo.find({});
   if (!file) {
     return { error: "Could not retrive JSON file" };
   }
-  return JSON.parse(file);
+  return file;
 };
 
 const checkForNewRaceResults = async () => {
@@ -81,6 +81,7 @@ const updateRaceConfig = async () => {
 
     const apiRes = await axios.all([lastRaceRes, nextRaceRes]);
 
+    console.log("apiRes", apiRes);
     const fullRes = apiRes.map((res, index) => {
       const { Races: races } = res.data.MRData.RaceTable;
       const {
@@ -131,7 +132,11 @@ const updateRaceConfig = async () => {
       return { [key]: returnObj };
     });
 
-    await fs.writeFile("./config/raceInfo.json", JSON.stringify(fullRes));
+    console.log("fullRes", fullRes);
+    const objForDB = await RaceInfo.create({
+      lastRace: fullRes[0].lastRace,
+      nextRace: fullRes[1].nextRace,
+    });
 
     return true;
   } catch (error) {
@@ -151,7 +156,7 @@ const processPredictions = async (attemptCount = 0) => {
         "currentPrediction.raceId": id,
       });
       users.map(async (user, index) => {
-        const { currentPrediction, points, name, id } = user;
+        const { currentPrediction, points, id } = user;
         const { list, raceId, raceName } = currentPrediction;
         const newPoints = calculatePrediction(list, results);
         try {

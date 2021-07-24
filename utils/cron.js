@@ -21,10 +21,10 @@ const startCron = async (time = Date.now() + 10 * 1000) => {
       startCron(time);
     } else if (resolveResults === "changed") {
       const newRaceInfo = await getRaceInfoFromFile();
+      console.log("new race", newRaceInfo);
+      time = newRaceInfo[0].nextRace.date + 60;
 
-      time = newRaceInfo[1].nextRace.date + 60;
-
-      startCron(time);
+      //startCron(time);
     } else if (resolveResults === "DB Error") {
       console.log("DB ERROR");
     }

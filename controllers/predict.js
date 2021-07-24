@@ -1,9 +1,6 @@
 const asyncHandler = require("../middleware/async");
 const errorHandler = require("../middleware/error");
 
-const { getRaceInfoFromFile } = require("../utils/resolvePredictions");
-const fs = require("fs").promises;
-
 const axios = require("axios");
 const dayjs = require("dayjs");
 
@@ -64,12 +61,10 @@ exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
 exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
   try {
     const lastRaceRes = axios.get(
-      `${process.env.F1_API_URL}/2021/8/results.json`
+      `${process.env.F1_API_URL}/current/last/results.json`
     );
 
-    const nextRaceRes = axios.get(
-      `${process.env.F1_API_URL}/2021/9/results.json`
-    );
+    const nextRaceRes = axios.get(`${process.env.F1_API_URL}/current.json`);
 
     const apiRes = await axios.all([lastRaceRes, nextRaceRes]);
 
@@ -82,20 +77,18 @@ exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
         season,
         round,
         raceName,
-      } = races[0];
+      } = index === 0
+        ? races[0]
+        : races.find((race) => {
+            const date = race.date + "T" + race.time;
 
-      //index === 0
-      //   ? races[0]
-      //   : races.find((race) => {
-      //       const date = race.date + "T" + race.time;
+            const d = new Date(date);
 
-      //       const d = new Date(date);
+            const parsed = Date.parse(d);
 
-      //       const parsed = Date.parse(d);
-
-      //       console.log(parsed, Date.now());
-      //       return parsed > Date.now();
-      //     });
+            console.log(parsed, Date.now());
+            return parsed > Date.now();
+          });
 
       let key = "";
 
