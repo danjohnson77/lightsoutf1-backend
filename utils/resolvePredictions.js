@@ -33,7 +33,7 @@ exports.resolvePredictions = asyncHandler(async () => {
   }
 });
 
-exports.getRaceInfoFromFile = async () => {
+exports.getRaceInfo = async () => {
   const file = await RaceInfo.find({});
   if (!file) {
     return { error: "Could not retrive JSON file" };
@@ -73,13 +73,9 @@ const checkForNewRaceResults = async () => {
 const updateRaceConfig = async () => {
   const dateFormat = "DD MMMM, YYYY HH:mm";
   try {
-    const lastRaceRes = axios.get(
+    const apiRes = await axios.get(
       `${process.env.F1_API_URL}/current/last/results.json`
     );
-
-    const nextRaceRes = axios.get(`${process.env.F1_API_URL}/current.json`);
-
-    const apiRes = await axios.all([lastRaceRes, nextRaceRes]);
 
     console.log("apiRes", apiRes);
     const fullRes = apiRes.map((res, index) => {
@@ -91,17 +87,7 @@ const updateRaceConfig = async () => {
         season,
         round,
         raceName,
-      } = index === 0
-        ? races[0]
-        : races.find((race) => {
-            const date = race.date + "T" + race.time;
-
-            const d = new Date(date);
-
-            const parsed = Date.parse(d);
-
-            return parsed > Date.now();
-          });
+      } = index === 0 ? races[0] : findNextRace(races);
 
       let key = "";
       let returnObj = {
@@ -133,7 +119,7 @@ const updateRaceConfig = async () => {
     });
 
     console.log("fullRes", fullRes);
-    const objForDB = await RaceInfo.create({
+    await RaceInfo.create({
       lastRace: fullRes[0].lastRace,
       nextRace: fullRes[1].nextRace,
     });
@@ -143,6 +129,20 @@ const updateRaceConfig = async () => {
     console.log(error);
     return false;
   }
+};
+
+const findNextRace = async (races) => {
+  const nextRace = races.find((race) => {
+    const date = race.date + "T" + race.time;
+
+    const d = new Date(date);
+
+    const parsed = Date.parse(d);
+
+    return parsed > Date.now();
+  });
+
+  return nextRace;
 };
 
 const processPredictions = async (attemptCount = 0) => {

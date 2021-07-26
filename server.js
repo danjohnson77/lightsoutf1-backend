@@ -4,7 +4,7 @@ const morgan = require("morgan");
 const colors = require("colors");
 const cors = require("cors");
 const connectDB = require("./config/db");
-const { startCron } = require("./utils/cron");
+const { initCron } = require("./utils/cron");
 
 dotenv.config({ path: "./config/config.env" });
 
@@ -51,4 +51,4 @@ process.on("unhandledRejection", (err, promise) => {
   });
 });
 
-//startCron();
+initCron();
