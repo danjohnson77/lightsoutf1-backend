@@ -97,7 +97,11 @@ exports.sendEmail = asyncHandler(async (req, res, next) => {
 
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-  const html = `<a href='${process.env.BASE_URL}/verify?token=${verifyToken}&id=${id}'>Click here</a> to verify your email`;
+  const url = `${process.env.BASE_URL}/verify?token=${verifyToken}&id=${id}`;
+
+  const html = `<div>
+  <h1>Welcome to LightsOutF1.racing!</h1>
+  <a href='${url}'>Click HERE</a> to verify your email</div>`;
 
   const msg = {
     to: email,
