@@ -1,11 +1,11 @@
 const asyncHandler = require("../middleware/async");
 const errorHandler = require("../middleware/error");
-
+const axios = require("axios");
 const dayjs = require("dayjs");
 
 const User = require("../models/User");
 const RaceInfo = require("../models/RaceInfo");
-
+const { updateRaceConfig } = require("../utils/resolvePredictions");
 const dateFormat = "DD MMMM, YYYY HH:mm";
 
 // @desc Get Users Predicitons
@@ -57,75 +57,12 @@ exports.updateUserPrediction = asyncHandler(async (req, res, next) => {
 // @desc Update Race Info
 // @route GET /predict/update
 // @access Private
-// exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
-//   try {
-//     const lastRaceRes = axios.get(
-//       `${process.env.F1_API_URL}/current/last/results.json`
-//     );
+exports.updateRaceInfo = asyncHandler(async (req, res, next) => {
+  try {
+    const objForDB = await updateRaceConfig(true);
 
-//     const nextRaceRes = axios.get(`${process.env.F1_API_URL}/current.json`);
-
-//     const apiRes = await axios.all([lastRaceRes, nextRaceRes]);
-
-//     const fullRes = apiRes.map((res, index) => {
-//       const { Races: races } = res.data.MRData.RaceTable;
-//       const {
-//         Results: results,
-//         date,
-//         time,
-//         season,
-//         round,
-//         raceName,
-//       } = index === 0
-//         ? races[0]
-//         : races.find((race) => {
-//             const date = race.date + "T" + race.time;
-
-//             const d = new Date(date);
-
-//             const parsed = Date.parse(d);
-
-//             console.log(parsed, Date.now());
-//             return parsed > Date.now();
-//           });
-
-//       let key = "";
-
-//       let returnObj = {
-//         id: `${season}r${round}`,
-//         raceName,
-//         date: Date.parse(`${date}T${time}`),
-//         displayDate: dayjs(`${date}T${time}`).format(dateFormat) + " GMT",
-//         lastUpdated: dayjs().format(dateFormat),
-//       };
-
-//       if (index === 0) {
-//         key = "lastRace";
-//         returnObj = {
-//           ...returnObj,
-//           results: results.map((item) => {
-//             const {
-//               Driver: { driverId },
-//               position,
-//             } = item;
-//             return { driverId, position };
-//           }),
-//         };
-//       }
-//       if (index === 1) {
-//         key = "nextRace";
-//       }
-
-//       return { [key]: returnObj };
-//     });
-
-//     const objForDB = await RaceInfo.create({
-//       lastRace: fullRes[0].lastRace,
-//       nextRace: fullRes[1].nextRace,
-//     });
-
-//     res.json(objForDB);
-//   } catch (error) {
-//     return next(errorHandler(error, req, res, next));
-//   }
-// });
+    res.json(objForDB);
+  } catch (error) {
+    return next(errorHandler(error, req, res, next));
+  }
+});

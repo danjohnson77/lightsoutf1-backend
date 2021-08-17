@@ -12,11 +12,11 @@ exports.resolvePredictions = asyncHandler(async () => {
 
   if (newResults === true) {
     console.log("NEW RESULTS FOUND");
-    const updated = await updateRaceConfig();
+    const updated = await this.updateRaceConfig();
 
     if (updated) {
       try {
-        const newRaceInfo = await this.getRaceInfoFromFile();
+        const newRaceInfo = await this.getRaceInfo();
 
         console.log("CONFIG UPDATED");
 
@@ -70,16 +70,26 @@ const checkForNewRaceResults = async () => {
   }
 };
 
-const updateRaceConfig = async () => {
+exports.updateRaceConfig = async (rollback = false) => {
   const dateFormat = "DD MMMM, YYYY HH:mm";
   try {
-    const apiRes = await axios.get(
-      `${process.env.F1_API_URL}/current/last/results.json`
+    const lastRaceRes = axios.get(
+      `${process.env.F1_API_URL}${
+        rollback ? "/2021/10/" : "/current/last/"
+      }results.json`
     );
 
-    console.log("apiRes", apiRes);
+    const nextRaceRes = axios.get(
+      `${process.env.F1_API_URL}${
+        rollback ? "/2021/11/results.json" : "/current.json"
+      }`
+    );
+
+    const apiRes = await axios.all([lastRaceRes, nextRaceRes]);
+
     const fullRes = apiRes.map((res, index) => {
       const { Races: races } = res.data.MRData.RaceTable;
+
       const {
         Results: results,
         date,
@@ -87,7 +97,7 @@ const updateRaceConfig = async () => {
         season,
         round,
         raceName,
-      } = index === 0 ? races[0] : findNextRace(races);
+      } = index === 0 ? races[0] : findNextRace(races, rollback);
 
       let key = "";
       let returnObj = {
@@ -118,35 +128,34 @@ const updateRaceConfig = async () => {
       return { [key]: returnObj };
     });
 
-    console.log("fullRes", fullRes);
-    await RaceInfo.create({
+    const objForDB = await RaceInfo.create({
       lastRace: fullRes[0].lastRace,
       nextRace: fullRes[1].nextRace,
     });
 
-    return true;
+    return objForDB;
   } catch (error) {
     console.log(error);
     return false;
   }
 };
 
-const findNextRace = async (races) => {
+const findNextRace = (races, rollback = false) => {
   const nextRace = races.find((race) => {
     const date = race.date + "T" + race.time;
 
     const d = new Date(date);
 
     const parsed = Date.parse(d);
-
-    return parsed > Date.now();
+    const currentDate = rollback ? Date.now() - 10000000000 : Date.now();
+    return parsed > currentDate;
   });
 
   return nextRace;
 };
 
 const processPredictions = async (attemptCount = 0) => {
-  const raceInfo = await this.getRaceInfoFromFile();
+  const raceInfo = await this.getRaceInfo();
 
   const { id, results } = raceInfo[0].lastRace;
 

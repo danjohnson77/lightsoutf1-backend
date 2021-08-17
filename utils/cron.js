@@ -8,7 +8,7 @@ const initCron = async () => {
   startCron(raceInfo[0].nextRace.date);
 };
 
-const startCron = async (time = Date.now() + 10 * 1000) => {
+const startCron = async (time = Date.now() + 3 * 1000) => {
   console.log("CRON STARTED, SCHEDULED FOR: ", new Date(time));
 
   schedule.scheduleJob(time, async () => {
